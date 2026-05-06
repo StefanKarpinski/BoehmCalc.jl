@@ -134,3 +134,17 @@ end
     @test_throws DomainError log(ExactReal(0))
     @test_throws DomainError log(ExactReal(-1))
 end
+
+@testset "power" begin
+    p1 = ExactReal(2) ^ 10
+    @test p1.rat_factor == 1024 && is_rational(p1)
+    p2 = ExactReal(1//2) ^ 3
+    @test p2.rat_factor == 1//8 && is_rational(p2)
+    p3 = ExactReal(4) ^ (1//2)
+    @test p3.rat_factor == 2 && is_rational(p3)
+    # Note: ExactReal(0)^0 == ExactReal(0)^0 would require Phase 8 (==); use field check instead.
+    p4 = ExactReal(0) ^ 0
+    @test p4.rat_factor == 1 && is_rational(p4)
+    p5 = ExactReal(-2) ^ 3
+    @test p5.rat_factor == -8 && is_rational(p5)
+end

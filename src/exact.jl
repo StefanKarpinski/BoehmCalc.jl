@@ -283,3 +283,49 @@ end
 
 Base.log10(x::ExactReal) = log(x) / log(ExactReal(10))
 Base.log(b::ExactReal, x::ExactReal) = log(x) / log(b)
+
+# ---------------------------------------------------------------------------
+# Power
+# ---------------------------------------------------------------------------
+
+function Base.:(^)(a::ExactReal, n::Integer)
+    n == 0 && return ExactReal(1)
+    n > 0 && return _pow_pos_int(a, n)
+    return inv(_pow_pos_int(a, -n))
+end
+
+function _pow_pos_int(a::ExactReal, n::Integer)
+    if a.prop.tag == One
+        r = try_pow(a.rat_factor, n)
+        r !== nothing && return ExactReal(r)
+    end
+    # Generic: repeated multiplication.
+    result = a
+    for _ in 2:n
+        result = result * a
+    end
+    return result
+end
+
+function Base.:(^)(a::ExactReal, r::Rational)
+    iszero(a) && r > 0 && return ExactReal(0)
+    iszero(a) && throw(DomainError(0, "0^non-positive is undefined"))
+    p = numerator(r); q = denominator(r)
+    a_p = a ^ p
+    return _root(a_p, q)
+end
+
+function _root(a::ExactReal, q::Integer)
+    q == 1 && return a
+    q == 2 && return sqrt(a)
+    # General: a^(1/q) = exp(log(a)/q). Requires a > 0.
+    a.prop.tag == One && a.rat_factor < 0 && throw(DomainError(a, "real root of negative"))
+    return exp(log(a) / ExactReal(q))
+end
+
+function Base.:(^)(a::ExactReal, b::ExactReal)
+    is_integer(b) && return a ^ Integer(numerator(b.rat_factor))
+    is_rational(b) && return a ^ b.rat_factor
+    a.prop.tag == One && a.rat_factor <= 0 && throw(DomainError(a, "non-positive base with non-rational exponent"))
+    return exp(b * log(a))
+end
