@@ -56,3 +56,18 @@ end
     z = ExactReal(π) - ExactReal(π)
     @test iszero(z)
 end
+
+@testset "multiplication (rational)" begin
+    a = ExactReal(2) * ExactReal(3)
+    @test a.rat_factor == 6 && is_rational(a)
+
+    b = ExactReal(1//2) * ExactReal(1//3)
+    @test b.rat_factor == 1//6 && is_rational(b)
+
+    # 0 * anything = 0
+    @test iszero(ExactReal(0) * ExactReal(π))
+
+    # rational * π
+    p = ExactReal(2) * ExactReal(π)
+    @test p.rat_factor == 2 && p.prop.tag == BoehmCalc.Pi
+end
