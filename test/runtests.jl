@@ -13,4 +13,5 @@ using Test
     include("show_tests.jl")
     include("interop_tests.jl")
     include("cr_test_corpus.jl")
+    include("reals_doctest_corpus.jl")
 end
