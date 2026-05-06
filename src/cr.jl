@@ -93,3 +93,21 @@ mutable struct NegCR <: CR
 end
 
 approximate(x::NegCR, p::Int) = -get_approx(x.op, p)
+
+mutable struct AddCR <: CR
+    left::CR
+    right::CR
+    max_appr::BigInt
+    min_prec::Int
+    valid::Bool
+    lock::ReentrantLock
+    function AddCR(left::CR, right::CR)
+        c = _make_cache()
+        new(left, right, c[1], c[2], c[3], c[4])
+    end
+end
+
+function approximate(x::AddCR, p::Int)
+    pp = p - 2
+    return _shift(get_approx(x.left, pp) + get_approx(x.right, pp), 2)
+end

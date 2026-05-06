@@ -35,4 +35,16 @@ using Test
         @test get_approx(c, 0) == -7
         @test get_approx(c, -3) == -56
     end
+
+    @testset "AddCR" begin
+        a = BoehmCalc.IntCR(5)
+        b = BoehmCalc.IntCR(7)
+        c = BoehmCalc.AddCR(a, b)
+        @test get_approx(c, 0) == 12
+        @test get_approx(c, -2) == 48      # 12 = 48 * 2^-2
+
+        # With ShiftedCR: 5 + 8 = 13
+        c2 = BoehmCalc.AddCR(BoehmCalc.IntCR(5), BoehmCalc.ShiftedCR(BoehmCalc.IntCR(2), 2))
+        @test get_approx(c2, 0) == 13
+    end
 end
