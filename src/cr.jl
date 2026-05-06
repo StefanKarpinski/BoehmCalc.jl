@@ -186,3 +186,26 @@ function approximate(x::InvCR, p::Int)
     scale_factor = -digits_needed_p - p
     return div(BigInt(1) << scale_factor, op_appr)
 end
+
+mutable struct SelectCR <: CR
+    selector::CR
+    then_op::CR
+    else_op::CR
+    selected::Int                          # 0 = unknown, 1 = then, -1 = else
+    max_appr::BigInt
+    min_prec::Int
+    valid::Bool
+    lock::ReentrantLock
+    function SelectCR(selector::CR, then_op::CR, else_op::CR)
+        c = _make_cache()
+        new(selector, then_op, else_op, 0, c[1], c[2], c[3], c[4])
+    end
+end
+
+function approximate(x::SelectCR, p::Int)
+    if x.selected == 0
+        a = get_approx(x.selector, p - 20)
+        x.selected = a >= 0 ? 1 : -1
+    end
+    return get_approx(x.selected == 1 ? x.then_op : x.else_op, p)
+end

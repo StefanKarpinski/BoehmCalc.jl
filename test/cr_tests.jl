@@ -65,4 +65,17 @@ using Test
         c2 = BoehmCalc.InvCR(BoehmCalc.IntCR(3))
         @test abs(get_approx(c2, -10) - 341) <= 1
     end
+
+    @testset "SelectCR" begin
+        # If selector ≥ 0, return then-branch; else, return else-branch.
+        pos = BoehmCalc.IntCR(5)
+        neg = BoehmCalc.IntCR(-5)
+        sel = BoehmCalc.IntCR(1)               # positive
+        c = BoehmCalc.SelectCR(sel, pos, neg)
+        @test get_approx(c, 0) == 5
+
+        sel2 = BoehmCalc.IntCR(-1)             # negative
+        c2 = BoehmCalc.SelectCR(sel2, pos, neg)
+        @test get_approx(c2, 0) == -5
+    end
 end
