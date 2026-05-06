@@ -110,3 +110,11 @@ function _latex_wrap_rat(r::Rational{BigInt}, sym::AbstractString)
     n == 1  && return "\\frac{" * sym * "}{" * string(d) * "}"
     return "\\frac{" * string(n) * sym * "}{" * string(d) * "}"
 end
+
+# ---------------------------------------------------------------------------
+# Task 10.3: string_decimal with explicit digits
+# ---------------------------------------------------------------------------
+
+function string_decimal(x::ExactReal; digits::Int = 15)
+    return _truncated_decimal(x, digits)
+end

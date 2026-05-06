@@ -22,3 +22,8 @@ end
     @test sprint(show, MIME"text/latex"(), sqrt(ExactReal(2))) == "\$\\sqrt{2}\$"
     @test sprint(show, MIME"text/latex"(), ExactReal(π) / ExactReal(4)) == "\$\\frac{\\pi}{4}\$"
 end
+
+@testset "string with digits" begin
+    @test BoehmCalc.string_decimal(ExactReal(π); digits=5)[1:5] == "3.141"
+    @test startswith(BoehmCalc.string_decimal(ExactReal(1//3); digits=10), "0.333333333")
+end
