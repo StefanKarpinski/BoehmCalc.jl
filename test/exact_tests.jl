@@ -102,3 +102,21 @@ end
 
     @test_throws DivideError ExactReal(1) / ExactReal(0)
 end
+
+@testset "sqrt" begin
+    @test iszero(sqrt(ExactReal(0)))
+    s4 = sqrt(ExactReal(4))
+    @test s4.rat_factor == 2 && is_rational(s4)
+
+    s9_4 = sqrt(ExactReal(9//4))
+    @test s9_4.rat_factor == 3//2 && is_rational(s9_4)
+
+    s2 = sqrt(ExactReal(2))
+    @test s2.prop.tag == BoehmCalc.Sqrt && s2.prop.arg == 2
+
+    # √8 = 2√2 — square extraction
+    s8 = sqrt(ExactReal(8))
+    @test s8.prop.tag == BoehmCalc.Sqrt && s8.prop.arg == 2 && s8.rat_factor == 2
+
+    @test_throws DomainError sqrt(ExactReal(-1))
+end

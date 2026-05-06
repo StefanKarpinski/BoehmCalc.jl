@@ -209,3 +209,31 @@ function Base.inv(x::ExactReal)
 end
 
 Base.:(/)(a::ExactReal, b::ExactReal) = a * inv(b)
+
+# ---------------------------------------------------------------------------
+# sqrt
+# ---------------------------------------------------------------------------
+
+function Base.sqrt(x::ExactReal)
+    iszero(x) && return ExactReal(0)
+    x.prop.tag == One && x.rat_factor < 0 && throw(DomainError(x, "sqrt of negative"))
+
+    if x.prop.tag == One
+        # Pure rational; check perfect square first.
+        ex = try_sqrt_exact(x.rat_factor)
+        ex !== nothing && return ExactReal(ex)
+        # √r where r > 0, not a perfect square: build Sqrt-tagged.
+        sq, rem = _extract_square(x.rat_factor)
+        if isone(rem)
+            # Should not happen if try_sqrt_exact returned nothing, but be safe.
+            return ExactReal(sq * BigInt(0))  # unreachable; bail to fallback
+        end
+        sqrt_prop = Property(Sqrt, rem)
+        sqrt_cr   = SqrtCR(_rational_cr(rem))
+        return ExactReal(sq, sqrt_cr, sqrt_prop)
+    end
+    # Symbolic input: fall back to CR-only with Irrational tag.
+    return ExactReal(Rational{BigInt}(1),
+                     SqrtCR(_scale_cr(x.rat_factor, x.cr_factor)),
+                     Property(Irrational, nothing))
+end
