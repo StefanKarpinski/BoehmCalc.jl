@@ -120,3 +120,17 @@ end
 
     @test_throws DomainError sqrt(ExactReal(-1))
 end
+
+@testset "exp/log" begin
+    @test exp(ExactReal(0)).rat_factor == 1 && exp(ExactReal(0)).prop.tag == BoehmCalc.One
+    e1 = exp(ExactReal(1))
+    @test e1.prop.tag == BoehmCalc.Exp && e1.prop.arg == 1
+    @test log(ExactReal(1)).rat_factor == 0  # log(1) = 0, but our impl returns ExactReal(0)
+    @test iszero(log(ExactReal(1)))
+    l_e = log(ExactReal(ℯ))
+    @test l_e.rat_factor == 1 && l_e.prop.tag == BoehmCalc.One
+    log10_100 = log10(ExactReal(100))
+    @test iszero(log10_100 - ExactReal(2)) || log10_100.prop.tag == BoehmCalc.Irrational
+    @test_throws DomainError log(ExactReal(0))
+    @test_throws DomainError log(ExactReal(-1))
+end

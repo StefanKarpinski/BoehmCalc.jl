@@ -237,3 +237,49 @@ function Base.sqrt(x::ExactReal)
                      SqrtCR(_scale_cr(x.rat_factor, x.cr_factor)),
                      Property(Irrational, nothing))
 end
+
+# ---------------------------------------------------------------------------
+# exp / log / log10
+# ---------------------------------------------------------------------------
+
+function Base.exp(x::ExactReal)
+    iszero(x) && return ExactReal(1)
+    if x.prop.tag == One
+        prop = make_property(Exp, x.rat_factor)
+        prop.tag == One && return ExactReal(1)
+        cr = ExpCR(_rational_cr(x.rat_factor))
+        return ExactReal(Rational{BigInt}(1), cr, prop)
+    end
+    # Symbolic input: CR-only fallback.
+    cr = ExpCR(_scale_cr(x.rat_factor, x.cr_factor))
+    return ExactReal(Rational{BigInt}(1), cr, Property(Irrational, nothing))
+end
+
+function Base.log(x::ExactReal)
+    # Domain check using rational layer when possible.
+    x.prop.tag == One && x.rat_factor <= 0 && throw(DomainError(x, "log of non-positive"))
+    isone(x) && return ExactReal(0)
+
+    # log(e^a) = a (when ExactReal is purely Exp-tagged with rat_factor 1)
+    if x.prop.tag == Exp && isone(x.rat_factor)
+        return ExactReal(x.prop.arg)
+    end
+
+    if x.prop.tag == One
+        # log(rational > 0): use Ln tag (which requires arg > 1).
+        if x.rat_factor < 1
+            return -log(ExactReal(inv(x.rat_factor)))
+        end
+        prop = make_property(Ln, x.rat_factor)
+        prop.tag == One && return ExactReal(0)
+        cr = LnCR(_rational_cr(x.rat_factor))
+        return ExactReal(Rational{BigInt}(1), cr, prop)
+    end
+    # Generic symbolic: CR fallback, Irrational tag.
+    return ExactReal(Rational{BigInt}(1),
+                     LnCR(_scale_cr(x.rat_factor, x.cr_factor)),
+                     Property(Irrational, nothing))
+end
+
+Base.log10(x::ExactReal) = log(x) / log(ExactReal(10))
+Base.log(b::ExactReal, x::ExactReal) = log(x) / log(b)
