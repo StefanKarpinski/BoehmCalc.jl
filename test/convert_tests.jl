@@ -28,5 +28,21 @@ using Test
 
         @test BigInt(ExactReal(42)) == 42
         @test_throws InexactError BigInt(ExactReal(1//2))
+
+        # Float32 and Float16 conversions
+        @test Float32(ExactReal(1//4)) === 0.25f0
+        @test Float16(ExactReal(1//4)) === Float16(0.25)
+
+        # Float32/Float16 of irrational
+        @test Float32(ExactReal(π)) ≈ Float32(π)
+        @test Float16(ExactReal(π)) ≈ Float16(π)
+
+        # BigFloat with explicit non-default precision
+        bf_low  = BigFloat(ExactReal(π); precision=32)
+        bf_high = BigFloat(ExactReal(π); precision=256)
+        @test abs(BigFloat(π; precision=256) - bf_high) < BigFloat(2)^-254
+
+        # BigInt of a non-integer ExactReal (InexactError)
+        @test_throws InexactError BigInt(ExactReal(π))
     end
 end
