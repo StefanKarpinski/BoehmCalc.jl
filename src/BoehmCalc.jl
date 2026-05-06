@@ -8,6 +8,7 @@ include("property.jl")
 include("exact.jl")
 include("compare.jl")
 include("convert.jl")
+include("show.jl")
 
 export with_timeout, CancelException
 export MAX_RATIONAL_BITS
