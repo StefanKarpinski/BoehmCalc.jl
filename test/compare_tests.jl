@@ -56,4 +56,18 @@ using Test
             @test isless(a, b) || isless(b, a)
         end
     end
+
+    @testset "hash invariants" begin
+        pairs = [
+            (ExactReal(1), ExactReal(1//1)),
+            (ExactReal(0.5), ExactReal(1//2)),
+            (sqrt(ExactReal(4)), ExactReal(2)),
+            (ExactReal(π) - ExactReal(π), ExactReal(0)),
+            (sqrt(ExactReal(2)) * sqrt(ExactReal(2)), ExactReal(2)),
+        ]
+        for (a, b) in pairs
+            @test a == b
+            @test hash(a) == hash(b)
+        end
+    end
 end
