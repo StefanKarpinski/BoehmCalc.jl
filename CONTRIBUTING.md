@@ -1,5 +1,23 @@
 # Contributing to BoehmCalc.jl
 
+## Branches and pull requests
+
+`main` is protected — direct pushes are rejected. All changes land via pull
+request:
+
+```bash
+# Start work on a topic branch
+git checkout -b feat/<short-name>
+
+# … commit work …
+
+git push -u origin feat/<short-name>
+gh pr create --fill        # or open the PR via the GitHub UI
+```
+
+CI must be green before merging. Branch names follow the conventional-commit
+type: `feat/`, `fix/`, `test/`, `refactor/`, `docs/`, `chore/`.
+
 ## Development workflow
 
 ```bash
