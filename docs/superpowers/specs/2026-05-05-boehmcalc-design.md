@@ -330,16 +330,40 @@ This guarantees `sort` produces deterministic, locally-correct output. The `obje
 
 The asymmetry between `==` (conservative) and `isless` (always-decides) is documented; users wanting strict symbolic ordering call `definitely_less(a, b)::Union{Bool,Missing}`.
 
-### `hash`
+### `hash` via `Base.decompose`
+
+Julia's numeric hashing protocol (`Base.hash(::Real, ::UInt)`) decomposes a value as `num · 2^pow / den` via `Base.decompose(x) -> (num::Integer, pow::Integer, den::Integer)` and canonicalizes the triple before hashing. This is what makes `1`, `1.0`, `1//1`, and `BigFloat(1)` all hash to the same value across types.
+
+We participate in this protocol:
 
 ```julia
-function Base.hash(x::ExactReal, h::UInt)
-    iszero(x.rat_factor) && return hash(0, h)
-    return hash(x.prop.tag, hash(x.prop.arg, hash(x.rat_factor, h)))
+function Base.decompose(x::ExactReal)::Tuple{BigInt,Int,BigInt}
+    if is_rational(x)
+        # Exact, contract-honoring.
+        return (numerator(x.rat_factor), 0, denominator(x.rat_factor))
+    else
+        # Irrational case — fall through to Float64, mirroring how Base
+        # handles `Irrational`. The contract `x == num*2^pow/den` is
+        # technically violated (no such triple exists for irrationals).
+        return Base.decompose(Float64(x))
+    end
 end
 ```
 
-Equal-comparable values hash identically (the contract `a == b ⇒ hash(a) == hash(b)` holds because `==` returns true only when `(rat_factor, tag, arg)` matches or both rat_factors are zero). Equal-but-not-comparable values may hash differently; that's fine because `==` returns false on those.
+This gives us correct cross-type hashing for the cases that matter:
+
+| Pair | `==` | `hash ==` |
+|---|---|---|
+| `ExactReal(1//3)` ↔ `1//3` ↔ `0.333…f64` (no, this differs) | exact | exact for `ExactReal(1//3) ↔ 1//3` ✓ |
+| `ExactReal(0.1)` ↔ `0.1` (Float64) | true (Float64 `0.1` is its binary rational) | true ✓ |
+| `ExactReal(π)` ↔ `Base.MathConstants.π` | true | true ✓ (both decompose via `Float64(π)`) |
+| `ExactReal(ℯ)` ↔ `ℯ` | true | true ✓ |
+| `ExactReal(sqrt(2))` (Sqrt tag) ↔ `sqrt(2.0)` (Float64) | false | true (collision, harmless) |
+| `ExactReal(γ)` ↔ `γ` (`Irrational{:γ}`) | false in v1 (see deferred items) | true |
+
+`hash(::Real, ::UInt)` is inherited from Base and just calls `decompose`; no per-type override needed.
+
+**Note on the `Float64(x)` fallback for irrational cases.** The fallback risks hash collisions between an exact `ExactReal(sqrt(2))` and a Float64 `sqrt(2.0)` even though `==` returns false. Hash collisions are correct (Set/Dict use `==` to disambiguate); they just cost an extra equality check. The alternative — returning a structural hash unique to the symbolic form — would break the `ExactReal(π) hashes same as π` invariant, which is more important.
 
 ## Display
 
@@ -505,8 +529,10 @@ All compatible with MIT redistribution; we preserve copyright notices in the tes
 
 These are deliberately deferred to v1.x:
 
-- Symbolic identities for `Irrational{:γ}`, `Irrational{:catalan}`, `Irrational{:φ}`. These would need new `Tag` values and Lindemann–Weierstrass-grade independence claims with the existing tags.
-- Hyperbolics with symbolic tags. Either as derived (`sinh = (exp(x) - exp(-x))/2`, no new tags) or first-class (`Sinh`/`Cosh`/`Tanh` tags with their own normalization).
-- `parse(ExactReal, "sqrt(2)+pi/3")` for string round-tripping.
-- Multi-threaded sharing of a single ExactReal's CR cache. Currently the `ReentrantLock` per CR makes it formally safe but performance under contention is untested.
-- Algebraic numbers beyond `√(rational)`. A future "AlgebraicReal" extension could plug into the property algebra.
+- **Symbolic identity for arbitrary `Irrational{S}`.** Add a `Tag::IrrationalConst` carrying the `Symbol` `S`. Then `ExactReal(γ) == γ` returns true (matches the hash that already agrees via `Float64` fallback). Same for `catalan`, `φ`, and any other named irrational constants. No Lindemann–Weierstrass machinery needed for this — just identity-by-symbol.
+- **Symbolic identities for `γ`/`catalan`/`φ` between *each other* and with the existing tags.** This *does* need independence claims (γ is conjectured irrational, not proven; catalan likewise; φ is a `Sqrt` and could be folded). Strictly weaker than the previous bullet.
+- **Hyperbolics with symbolic tags.** Either derived (`sinh = (exp(x) - exp(-x))/2`, no new tags) or first-class (`Sinh`/`Cosh`/`Tanh` tags with normalization). Currently fully out of scope.
+- **`parse(ExactReal, "sqrt(2)+pi/3")`** for string round-tripping.
+- **Multi-threaded sharing of a single ExactReal's CR cache.** Currently the `ReentrantLock` per CR makes it formally safe but performance under contention is untested.
+- **Algebraic numbers beyond `√(rational)`.** A future "AlgebraicReal" extension could plug into the property algebra.
+- **Julia core: extend the `Base.decompose` contract to express "this value is uncomputable as `num·2^pow/den`".** Currently the contract is silently violated by `Irrational` and now by irrational `ExactReal`. A future addition (e.g. a fourth tuple element carrying a structural key, or a separate `Base.hash_irrational` overload) would let irrational types hash by symbolic identity rather than by Float64 approximation. Out of scope for BoehmCalc v1; raise as a Julia issue when there's bandwidth.
