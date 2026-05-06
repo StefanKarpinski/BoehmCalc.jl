@@ -40,3 +40,20 @@ Base.isnan(::ExactReal)    = false
 Base.isinf(::ExactReal)    = false
 Base.zero(::Type{ExactReal}) = ExactReal(0)
 Base.one(::Type{ExactReal})  = ExactReal(1)
+
+const _PI_CR   = PiCR()
+const _PI_PROP = Property(Pi, nothing)
+
+ExactReal(::Base.Irrational{:π}) = ExactReal(Rational{BigInt}(1), _PI_CR, _PI_PROP)
+
+function ExactReal(::Base.Irrational{:ℯ})
+    e_prop = Property(Exp, Rational{BigInt}(1))
+    e_cr   = ExpCR(IntCR(1))
+    ExactReal(Rational{BigInt}(1), e_cr, e_prop)
+end
+
+# Other Irrational{S}: convert via BigFloat; tag as Irrational.
+function ExactReal(x::Base.Irrational)
+    cr = BigFloatCR((_)->BigFloat(x), IntCR(0); extra_bits=64)
+    ExactReal(Rational{BigInt}(1), cr, Property(Irrational, nothing))
+end
