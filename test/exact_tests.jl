@@ -71,3 +71,22 @@ end
     p = ExactReal(2) * ExactReal(π)
     @test p.rat_factor == 2 && p.prop.tag == BoehmCalc.Pi
 end
+
+@testset "division" begin
+    a = ExactReal(6) / ExactReal(3)
+    @test a.rat_factor == 2 && is_rational(a)
+
+    b = ExactReal(1) / ExactReal(3)
+    @test b.rat_factor == 1//3 && is_rational(b)
+
+    # 1/π keeps Pi tag with rat_factor 1, but cr_factor inverted
+    inv_pi = ExactReal(1) / ExactReal(π)
+    @test inv_pi.prop.tag == BoehmCalc.Pi
+    @test inv_pi.rat_factor == 1
+
+    inv_2 = inv(ExactReal(2))
+    @test inv_2.rat_factor == 1//2 && is_rational(inv_2)
+
+    # Division by zero
+    @test_throws DivideError ExactReal(1) / ExactReal(0)
+end

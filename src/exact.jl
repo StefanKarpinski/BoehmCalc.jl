@@ -177,3 +177,15 @@ end
 _rational_cr(r::Rational{BigInt}) = isone(denominator(r)) ?
     IntCR(numerator(r)) :
     MulCR(IntCR(numerator(r)), InvCR(IntCR(denominator(r))))
+
+# Inversion + division
+function Base.inv(x::ExactReal)
+    iszero(x) && throw(DivideError())
+    if x.prop.tag == One
+        return ExactReal(inv(x.rat_factor))
+    end
+    inv_rat = inv(x.rat_factor)
+    return ExactReal(inv_rat, InvCR(x.cr_factor), x.prop)
+end
+
+Base.:(/)(a::ExactReal, b::ExactReal) = a * inv(b)
