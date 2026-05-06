@@ -444,3 +444,24 @@ function Base.atan(y::ExactReal, x::ExactReal)
     end
     return base - ExactReal(π)
 end
+
+# ---------------------------------------------------------------------------
+# factorial / abs / sign
+# ---------------------------------------------------------------------------
+
+function Base.factorial(x::ExactReal)
+    is_integer(x) || throw(DomainError(x, "factorial requires non-negative integer"))
+    n = numerator(x.rat_factor)
+    n < 0 && throw(DomainError(x, "factorial of negative"))
+    return ExactReal(factorial(BigInt(n)))
+end
+
+function Base.abs(x::ExactReal)
+    iszero(x) && return x
+    x.rat_factor < 0 ? -x : x
+end
+
+function Base.sign(x::ExactReal)
+    iszero(x) && return ExactReal(0)
+    return x.rat_factor < 0 ? ExactReal(-1) : ExactReal(1)
+end

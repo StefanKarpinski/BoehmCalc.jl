@@ -187,3 +187,21 @@ end
 
     @test_throws DomainError asin(ExactReal(2))
 end
+
+@testset "factorial / abs / sign" begin
+    f0 = factorial(ExactReal(0))
+    @test f0.rat_factor == 1 && is_rational(f0)
+    f5 = factorial(ExactReal(5))
+    @test f5.rat_factor == 120 && is_rational(f5)
+    @test_throws DomainError factorial(ExactReal(-1))
+    @test_throws DomainError factorial(ExactReal(1//2))
+
+    a_neg = abs(ExactReal(-3))
+    @test a_neg.rat_factor == 3 && is_rational(a_neg)
+    a_pos = abs(ExactReal(3))
+    @test a_pos.rat_factor == 3 && is_rational(a_pos)
+
+    s5  = sign(ExactReal(5));   @test s5.rat_factor == 1
+    sn5 = sign(ExactReal(-5));  @test sn5.rat_factor == -1
+    @test iszero(sign(ExactReal(0)))
+end
