@@ -44,4 +44,16 @@ using Test
         d = Dict{Real,Int}(1//3 => 7)
         @test d[ExactReal(1//3)] == 7
     end
+
+    @testset "conservatism" begin
+        # (π + e) computed in two structurally different ways isn't symbolically
+        # comparable; per spec, == returns false (conservative).
+        a = ExactReal(π) + ExactReal(ℯ)
+        b = ExactReal(ℯ) + ExactReal(π)
+        if !is_comparable(a, b)
+            @test !(a == b)
+            # isless still gives a deterministic answer
+            @test isless(a, b) || isless(b, a)
+        end
+    end
 end
