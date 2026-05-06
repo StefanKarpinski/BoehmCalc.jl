@@ -25,6 +25,8 @@ function approximate(x::BigFloatCR, p::Int)
         op_appr_bigint = get_approx(x.op, -pp)
         op_bf = BigFloat(op_appr_bigint) * BigFloat(2.0)^(-pp)
         result_bf = x.f(op_bf)
+        yield()
+        check_cancellation()
         scaled = result_bf * BigFloat(2.0)^(-p)
         return round(BigInt, scaled)
     end
