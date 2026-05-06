@@ -1,0 +1,42 @@
+struct ExactReal <: Real
+    rat_factor::Rational{BigInt}
+    cr_factor::CR
+    prop::Property
+    function ExactReal(rat_factor::Rational{BigInt}, cr_factor::CR, prop::Property)
+        # If rat_factor is zero, normalize cr_factor and prop to One/IntCR(1).
+        if iszero(rat_factor)
+            return new(rat_factor, _ONE_CR, _ONE_PROP)
+        end
+        return new(rat_factor, cr_factor, prop)
+    end
+end
+
+# Shared singletons.
+const _ONE_CR   = IntCR(1)
+const _ONE_PROP = Property(One, nothing)
+
+# Constructors from Julia number types.
+ExactReal(n::Integer)  = ExactReal(Rational{BigInt}(BigInt(n)), _ONE_CR, _ONE_PROP)
+ExactReal(r::Rational) = ExactReal(Rational{BigInt}(numerator(r), denominator(r)), _ONE_CR, _ONE_PROP)
+
+# Float64 / BigFloat convert to their EXACT binary value as a Rational{BigInt}.
+function ExactReal(x::Float64)
+    isfinite(x) || throw(DomainError(x, "ExactReal requires a finite value"))
+    return ExactReal(Rational{BigInt}(x))
+end
+function ExactReal(x::BigFloat)
+    isfinite(x) || throw(DomainError(x, "ExactReal requires a finite value"))
+    return ExactReal(Rational{BigInt}(x))
+end
+
+# Predicates.
+is_rational(x::ExactReal) = x.prop.tag == One
+is_integer(x::ExactReal)  = is_rational(x) && isone(denominator(x.rat_factor))
+
+Base.iszero(x::ExactReal) = iszero(x.rat_factor)
+Base.isone(x::ExactReal)  = isone(x.rat_factor) && x.prop.tag == One
+Base.isfinite(::ExactReal) = true
+Base.isnan(::ExactReal)    = false
+Base.isinf(::ExactReal)    = false
+Base.zero(::Type{ExactReal}) = ExactReal(0)
+Base.one(::Type{ExactReal})  = ExactReal(1)
