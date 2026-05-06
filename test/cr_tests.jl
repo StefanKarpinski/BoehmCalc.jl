@@ -47,4 +47,12 @@ using Test
         c2 = BoehmCalc.AddCR(BoehmCalc.IntCR(5), BoehmCalc.ShiftedCR(BoehmCalc.IntCR(2), 2))
         @test get_approx(c2, 0) == 13
     end
+
+    @testset "MulCR" begin
+        a = BoehmCalc.IntCR(3)
+        b = BoehmCalc.IntCR(7)
+        c = BoehmCalc.MulCR(a, b)
+        @test get_approx(c, 0) == 21
+        @test get_approx(c, -10) == 21 * 1024
+    end
 end
