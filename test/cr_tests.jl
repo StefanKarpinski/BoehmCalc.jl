@@ -78,4 +78,35 @@ using Test
         c2 = BoehmCalc.SelectCR(sel2, pos, neg)
         @test get_approx(c2, 0) == -5
     end
+
+    @testset "coverage" begin
+        # _shift with n == 0 → identity
+        @test BoehmCalc._shift(BigInt(7), 0) == BigInt(7)
+
+        # SelectCR cache hit: call get_approx twice — second call hits x.selected != 0
+        pos = BoehmCalc.IntCR(42)
+        neg = BoehmCalc.IntCR(-42)
+        sel = BoehmCalc.IntCR(1)
+        c = BoehmCalc.SelectCR(sel, pos, neg)
+        @test get_approx(c, 0) == 42
+        # Second call: selected is already set (cache hit in approximate)
+        @test get_approx(c, -1) == 84    # 42 * 2
+
+        # msd typemin sentinel: x effectively zero (IntCR(0))
+        zero_cr = BoehmCalc.IntCR(0)
+        @test BoehmCalc.msd(zero_cr, -10) == typemin(Int)
+
+        # MulCR with one operand near zero → exercises msd_op1 == typemin path
+        # and then msd_op2 path
+        zero_mul = BoehmCalc.MulCR(BoehmCalc.IntCR(0), BoehmCalc.IntCR(5))
+        @test get_approx(zero_mul, 0) == 0    # 0 * 5 = 0
+
+        # MulCR with both operands near zero → both typemin → return 0
+        zero_zero = BoehmCalc.MulCR(BoehmCalc.IntCR(0), BoehmCalc.IntCR(0))
+        @test get_approx(zero_zero, 0) == 0
+
+        # InvCR DomainError when operand is effectively zero
+        inv_zero = BoehmCalc.InvCR(BoehmCalc.IntCR(0))
+        @test_throws DomainError get_approx(inv_zero, -10)
+    end
 end
