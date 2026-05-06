@@ -16,3 +16,9 @@ using Test
     s = sprint(show, ExactReal(π) + sqrt(ExactReal(2)))
     @test occursin("…", s) || occursin(".", s)
 end
+
+@testset "text/latex" begin
+    @test sprint(show, MIME"text/latex"(), ExactReal(π)) == "\$\\pi\$"
+    @test sprint(show, MIME"text/latex"(), sqrt(ExactReal(2))) == "\$\\sqrt{2}\$"
+    @test sprint(show, MIME"text/latex"(), ExactReal(π) / ExactReal(4)) == "\$\\frac{\\pi}{4}\$"
+end

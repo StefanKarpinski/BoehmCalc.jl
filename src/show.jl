@@ -77,3 +77,36 @@ function Base.show(io::IO, ::MIME"text/plain", x::ExactReal)
         print(io, s, " ≈ ", _truncated_decimal(x, 15))
     end
 end
+
+# ---------------------------------------------------------------------------
+# Task 10.2: text/latex MIME
+# ---------------------------------------------------------------------------
+
+function Base.show(io::IO, ::MIME"text/latex", x::ExactReal)
+    print(io, "\$", _latex_string(x), "\$")
+end
+
+function _latex_string(x::ExactReal)
+    if is_rational(x)
+        n = numerator(x.rat_factor); d = denominator(x.rat_factor)
+        isone(d) && return string(n)
+        return "\\frac{" * string(n) * "}{" * string(d) * "}"
+    elseif x.prop.tag == Pi
+        return _latex_wrap_rat(x.rat_factor, "\\pi")
+    elseif x.prop.tag == Sqrt
+        sym = "\\sqrt{" * _arg_string(x.prop.arg) * "}"
+        return _latex_wrap_rat(x.rat_factor, sym)
+    elseif x.prop.tag == Exp && x.prop.arg == 1 && isone(x.rat_factor)
+        return "e"
+    end
+    return _truncated_decimal(x, 15)
+end
+
+function _latex_wrap_rat(r::Rational{BigInt}, sym::AbstractString)
+    isone(r) && return sym
+    r == -1  && return "-" * sym
+    n = numerator(r); d = denominator(r)
+    isone(d) && return string(n) * sym
+    n == 1  && return "\\frac{" * sym * "}{" * string(d) * "}"
+    return "\\frac{" * string(n) * sym * "}{" * string(d) * "}"
+end
