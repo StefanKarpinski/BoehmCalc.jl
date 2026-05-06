@@ -63,3 +63,46 @@ end
 # ---------------------------------------------------------------------------
 
 Base.:(-)(x::ExactReal) = ExactReal(-x.rat_factor, x.cr_factor, x.prop)
+
+# Addition
+function Base.:(+)(a::ExactReal, b::ExactReal)
+    iszero(a) && return b
+    iszero(b) && return a
+
+    # Both pure rationals.
+    if a.prop.tag == One && b.prop.tag == One
+        sum_r = try_add(a.rat_factor, b.rat_factor)
+        sum_r !== nothing && return ExactReal(sum_r, _ONE_CR, _ONE_PROP)
+        # Overflow → fall back to CR
+        return _crsum_fallback(a, b)
+    end
+
+    # Same Property: combine rat_factors.
+    if a.prop == b.prop
+        sum_r = try_add(a.rat_factor, b.rat_factor)
+        if sum_r !== nothing
+            iszero(sum_r) && return ExactReal(0)
+            return ExactReal(sum_r, a.cr_factor, a.prop)
+        end
+    end
+
+    # Different properties or rat_factor overflow: raw CR sum, no symbolic tag.
+    return _crsum_fallback(a, b)
+end
+
+Base.:(-)(a::ExactReal, b::ExactReal) = a + (-b)
+
+# Fallback: build the CR (rat_a · cr_a + rat_b · cr_b), drop the tag.
+function _crsum_fallback(a::ExactReal, b::ExactReal)
+    cr = AddCR(_scale_cr(a.rat_factor, a.cr_factor),
+               _scale_cr(b.rat_factor, b.cr_factor))
+    return ExactReal(Rational{BigInt}(1), cr, Property(Irrational, nothing))
+end
+
+# Scale a CR by a rational factor.
+function _scale_cr(r::Rational{BigInt}, c::CR)
+    isone(r) && return c
+    n = numerator(r); d = denominator(r)
+    base = isone(n) ? c : MulCR(IntCR(n), c)
+    return isone(d) ? base : MulCR(InvCR(IntCR(d)), base)
+end

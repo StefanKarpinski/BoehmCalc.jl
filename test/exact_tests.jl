@@ -36,3 +36,23 @@ end
     p = -ExactReal(π)
     @test p.rat_factor == -1 && p.prop.tag == BoehmCalc.Pi
 end
+
+@testset "addition" begin
+    a = ExactReal(2) + ExactReal(3)
+    @test a.rat_factor == 5 && is_rational(a)
+
+    b = ExactReal(1//3) + ExactReal(2//3)
+    @test b.rat_factor == 1
+
+    # Same Pi tag combines rat_factors
+    c = ExactReal(π) + ExactReal(π)
+    @test c.rat_factor == 2 && c.prop.tag == BoehmCalc.Pi
+
+    # 0 + π = π
+    p = ExactReal(0) + ExactReal(π)
+    @test p.prop.tag == BoehmCalc.Pi && p.rat_factor == 1
+
+    # π - π = 0 (subtraction = adding negation)
+    z = ExactReal(π) - ExactReal(π)
+    @test iszero(z)
+end
