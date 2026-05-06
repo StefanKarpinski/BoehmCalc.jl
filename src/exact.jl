@@ -329,3 +329,63 @@ function Base.:(^)(a::ExactReal, b::ExactReal)
     a.prop.tag == One && a.rat_factor <= 0 && throw(DomainError(a, "non-positive base with non-rational exponent"))
     return exp(b * log(a))
 end
+
+# ---------------------------------------------------------------------------
+# sin / cos / tan
+# ---------------------------------------------------------------------------
+
+# Helper: extract `arg / π` if the input is a rational multiple of π.
+function _as_pi_multiple(x::ExactReal)::Union{Rational{BigInt}, Nothing}
+    if x.prop.tag == Pi && x.cr_factor === _PI_CR
+        return x.rat_factor
+    end
+    return nothing
+end
+
+function Base.sin(x::ExactReal)
+    iszero(x) && return ExactReal(0)
+    pi_mult = _as_pi_multiple(x)
+    if pi_mult !== nothing
+        return _sin_pi_rational(pi_mult)
+    end
+    # Generic: sin(x) = cos(x - π/2)
+    halfpi = ExactReal(π) / ExactReal(2)
+    return cos(x - halfpi)
+end
+
+function Base.cos(x::ExactReal)
+    iszero(x) && return ExactReal(1)
+    pi_mult = _as_pi_multiple(x)
+    if pi_mult !== nothing
+        return _cos_pi_rational(pi_mult)
+    end
+    # Generic: build a CosCR.
+    cr = CosCR(_scale_cr(x.rat_factor, x.cr_factor))
+    return ExactReal(Rational{BigInt}(1), cr, Property(Irrational, nothing))
+end
+
+Base.tan(x::ExactReal) = sin(x) / cos(x)
+
+# sin(π · q) for rational q. Reduces q mod 2 and uses canonical values.
+function _sin_pi_rational(q::Rational{BigInt})
+    q_red = q - 2 * floor(q / 2)         # bring into [0, 2)
+    if q_red >= 1
+        return -_sin_pi_rational(q_red - 1)   # sin(π(q+1)) = -sin(πq)
+    end
+    if q_red > 1//2
+        return _sin_pi_rational(1 - q_red)    # sin(π(1-q)) = sin(πq)
+    end
+    # q_red ∈ [0, 1/2]
+    iszero(q_red)        && return ExactReal(0)
+    q_red == 1//6        && return ExactReal(1//2)
+    q_red == 1//4        && return sqrt(ExactReal(2)) / ExactReal(2)
+    q_red == 1//3        && return sqrt(ExactReal(3)) / ExactReal(2)
+    q_red == 1//2        && return ExactReal(1)
+    # Generic: sin(πq) is irrational; build SinPi-tagged.
+    prop = make_property(SinPi, q_red)
+    cr   = BigFloatCR(sin, MulCR(_PI_CR, _rational_cr(q_red)))
+    return ExactReal(Rational{BigInt}(1), cr, prop)
+end
+
+# cos(πq) = sin(π(q + 1/2))
+_cos_pi_rational(q::Rational{BigInt}) = _sin_pi_rational(q + 1//2)

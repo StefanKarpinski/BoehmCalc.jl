@@ -148,3 +148,20 @@ end
     p5 = ExactReal(-2) ^ 3
     @test p5.rat_factor == -8 && is_rational(p5)
 end
+
+@testset "trig" begin
+    @test iszero(sin(ExactReal(0)))
+    c0 = cos(ExactReal(0))
+    @test c0.rat_factor == 1 && is_rational(c0)
+    @test iszero(tan(ExactReal(0)))
+
+    # Special values that simplify symbolically
+    s_pi6 = sin(ExactReal(π) / ExactReal(6))
+    @test s_pi6.rat_factor == 1//2 && is_rational(s_pi6)
+
+    c_pi2 = cos(ExactReal(π) / ExactReal(2))
+    @test iszero(c_pi2)
+
+    s_pi = sin(ExactReal(π))
+    @test iszero(s_pi)
+end
