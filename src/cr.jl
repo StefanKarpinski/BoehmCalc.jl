@@ -1,8 +1,32 @@
+"""
+    CR
+
+Abstract supertype for computable reals.
+
+Every concrete `CR` subtype must declare the following mutable fields:
+- `min_prec::Int`      — precision level of the cached approximation
+- `max_appr::BigInt`   — the cached approximation value at `min_prec`
+- `valid::Bool`        — whether the cache is currently valid
+- `lock::ReentrantLock` — per-instance lock guarding the cache fields
+
+Use `_make_cache()` to obtain initial values for these four fields in the
+correct order.
+"""
 abstract type CR end
 
-# Helper: arithmetic shift for BigInt.
-# Positive n shifts right (divides by 2^n, rounding toward -∞).
-# Negative n shifts left (multiplies by 2^(-n)).
+"""
+    _shift(x::BigInt, n::Int) -> BigInt
+
+Arithmetic shift of `x` by `n` bit positions.
+- `n > 0`: right-shift (floor-divide by `2^n`, rounding toward −∞).
+- `n < 0`: left-shift (multiply by `2^(-n)`).
+- `n == 0`: identity.
+
+Floor-rounding is intentional. The CR contract requires only
+`|a·2^p − x| < 2^p` (i.e. ±1 ULP error is permitted), so truncating the
+low-order bits rather than rounding-half-up is perfectly valid, and all
+`approximate` implementations account for this.
+"""
 function _shift(x::BigInt, n::Int)
     n == 0 && return x
     n > 0 ? x >> n : x << -n
