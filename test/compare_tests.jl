@@ -70,4 +70,50 @@ using Test
             @test hash(a) == hash(b)
         end
     end
+
+    @testset "coverage" begin
+        # _exact_equal Sqrt-vs-Sqrt: same squared magnitude but different sign → not equal
+        s2a = sqrt(ExactReal(2))               # rat=1, prop=Sqrt(2)
+        s2b = -sqrt(ExactReal(2))              # rat=-1, prop=Sqrt(2)
+        # 1·√2 != -1·√2 (different sign)
+        @test !(s2a == s2b)
+        # 2·√(1/2) == √2: rat_factor^2 * arg: 4*(1/2) == 1*2, same sign
+        # sqrt(ExactReal(1//2)) gives Sqrt(1//2) tagged with rat_factor=1
+        # Multiplying by 2 gives rat_factor=2, prop=Sqrt(1//2)
+        sqrt_half_scaled = ExactReal(2) * sqrt(ExactReal(1//2))
+        @test sqrt_half_scaled == s2a   # 2·√(1/2) = √2
+
+        # decompose for irrational hits the Float64 branch
+        decomp = Base.decompose(ExactReal(π))
+        @test isa(decomp, Tuple{BigInt, Int, BigInt})
+
+        # hash for generic irrational (not π or ℯ) uses Float64 path
+        s2_hash = hash(sqrt(ExactReal(2)))
+        @test s2_hash == hash(Float64(sqrt(ExactReal(2))))
+
+        # definitely_less returns missing when not comparable
+        a_irr = ExactReal(π) + ExactReal(ℯ)    # Irrational-tagged
+        b_irr = ExactReal(ℯ) + ExactReal(π)    # Irrational-tagged
+        if !is_comparable(a_irr, b_irr)
+            result = definitely_less(a_irr, b_irr)
+            @test result === missing
+        end
+
+        # isless non-comparable path: π+ℯ vs ℯ+π
+        # Force the non-comparable branch in isless (returns a Bool, not missing)
+        if !is_comparable(a_irr, b_irr)
+            # isless always returns a Bool (uses objectid tiebreak)
+            r = isless(a_irr, b_irr)
+            @test r isa Bool
+        end
+
+        # is_comparable step 4: definitely_independent but both small
+        # two independently-computed tiny values — hard to trigger magnitude < 2^-5000 in tests,
+        # so instead exercise it via the cr diff path that falls through to false
+        # Build two ExactReals that are independent (Pi vs Ln) but comparable numerically
+        pi_val = ExactReal(π)
+        ln2_val = log(ExactReal(2))
+        # These are definitely_independent; at least one magnitude_ge should hold
+        @test is_comparable(pi_val, ln2_val)
+    end
 end
