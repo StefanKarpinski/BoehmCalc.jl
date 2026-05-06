@@ -1,6 +1,6 @@
 # test/compare_tests.jl
 using BoehmCalc
-using BoehmCalc: ExactReal, is_comparable, definitely_equal
+using BoehmCalc: ExactReal, is_comparable, definitely_equal, definitely_less
 using Test
 
 @testset "comparison" begin
@@ -20,5 +20,14 @@ using Test
         @test is_comparable(ExactReal(π), ExactReal(π))
         @test is_comparable(ExactReal(π), sqrt(ExactReal(2)))
         @test is_comparable(ExactReal(π), ExactReal(1))
+    end
+
+    @testset "isless" begin
+        @test ExactReal(2) < ExactReal(3)
+        @test !(ExactReal(3) < ExactReal(2))
+        @test sqrt(ExactReal(2)) < ExactReal(2)
+        @test ExactReal(0) < ExactReal(π)
+        sorted = sort([ExactReal(π), ExactReal(2), ExactReal(0)])
+        @test sorted == [ExactReal(0), ExactReal(2), ExactReal(π)]
     end
 end

@@ -42,3 +42,33 @@ function _magnitude_ge(x::ExactReal, p::Int)
 end
 
 Base.:(==)(a::ExactReal, b::ExactReal) = definitely_equal(a, b)
+
+function Base.isless(a::ExactReal, b::ExactReal)
+    if is_comparable(a, b)
+        return _exact_less(a, b)
+    end
+    d = a - b
+    diff_cr = _scale_cr(d.rat_factor, d.cr_factor)
+    delta = get_approx(diff_cr, -100)
+    delta < -1 && return true
+    delta >  1 && return false
+    return objectid(a) < objectid(b)
+end
+
+function _exact_less(a::ExactReal, b::ExactReal)
+    iszero(a) && iszero(b) && return false
+    d = a - b
+    diff_cr = _scale_cr(d.rat_factor, d.cr_factor)
+    delta = get_approx(diff_cr, -64)
+    return delta < 0
+end
+
+function definitely_less(a::ExactReal, b::ExactReal)::Union{Bool, Missing}
+    is_comparable(a, b) || return missing
+    return _exact_less(a, b)
+end
+
+Base.:<(a::ExactReal, b::ExactReal) = isless(a, b)
+Base.:>(a::ExactReal, b::ExactReal) = isless(b, a)
+Base.:<=(a::ExactReal, b::ExactReal) = !isless(b, a)
+Base.:>=(a::ExactReal, b::ExactReal) = !isless(a, b)
