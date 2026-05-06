@@ -55,4 +55,14 @@ using Test
         @test get_approx(c, 0) == 21
         @test get_approx(c, -10) == 21 * 1024
     end
+
+    @testset "InvCR" begin
+        # 1 / 4 = 0.25. At precision -2: 0.25 * 4 = 1
+        c = BoehmCalc.InvCR(BoehmCalc.IntCR(4))
+        @test get_approx(c, -2) == 1
+        @test get_approx(c, -10) == 256       # 0.25 * 1024
+        # 1 / 3 ≈ 0.333... at precision -10 should be ≈ 341 (within ±1)
+        c2 = BoehmCalc.InvCR(BoehmCalc.IntCR(3))
+        @test abs(get_approx(c2, -10) - 341) <= 1
+    end
 end

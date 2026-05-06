@@ -164,3 +164,25 @@ function approximate(x::MulCR, p::Int)
     scale_amount = p - prec1 - prec2
     return _shift(a1 * a2, scale_amount)
 end
+
+mutable struct InvCR <: CR
+    op::CR
+    max_appr::BigInt
+    min_prec::Int
+    valid::Bool
+    lock::ReentrantLock
+    function InvCR(op::CR)
+        c = _make_cache()
+        new(op, c[1], c[2], c[3], c[4])
+    end
+end
+
+function approximate(x::InvCR, p::Int)
+    msd_op = msd(x.op, p - 2)
+    msd_op == typemin(Int) && throw(DomainError(x.op, "inverse of (effectively) zero"))
+    inv_msd = 1 - msd_op
+    digits_needed_p = (-2 * inv_msd - 3) + p
+    op_appr = get_approx(x.op, digits_needed_p)
+    scale_factor = -digits_needed_p - p
+    return div(BigInt(1) << scale_factor, op_appr)
+end
