@@ -12,4 +12,5 @@ using Test
     include("convert_tests.jl")
     include("show_tests.jl")
     include("interop_tests.jl")
+    include("cr_test_corpus.jl")
 end
