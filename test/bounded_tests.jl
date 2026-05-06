@@ -14,4 +14,19 @@ using Test
     @test try_sub(Rational{BigInt}(2, 3), Rational{BigInt}(1, 3)) == Rational{BigInt}(1, 3)
     @test try_div(Rational{BigInt}(1, 2), Rational{BigInt}(1, 3)) == Rational{BigInt}(3, 2)
     @test try_div(Rational{BigInt}(1, 2), Rational{BigInt}(0)) === nothing   # divide by zero
+
+    # try_pow
+    @test BoehmCalc.try_pow(Rational{BigInt}(2), 10) == Rational{BigInt}(1024)
+    @test BoehmCalc.try_pow(Rational{BigInt}(1, 2), 3) == Rational{BigInt}(1, 8)
+    @test BoehmCalc.try_pow(Rational{BigInt}(2), 0) == Rational{BigInt}(1)
+    @test BoehmCalc.try_pow(Rational{BigInt}(2), -3) == Rational{BigInt}(1, 8)
+    # Overflow bail-out: 2^15000 exceeds MAX_RATIONAL_BITS = 10000
+    @test BoehmCalc.try_pow(Rational{BigInt}(2), 15000) === nothing
+
+    # try_sqrt_exact
+    @test BoehmCalc.try_sqrt_exact(Rational{BigInt}(0)) == Rational{BigInt}(0)
+    @test BoehmCalc.try_sqrt_exact(Rational{BigInt}(4)) == Rational{BigInt}(2)
+    @test BoehmCalc.try_sqrt_exact(Rational{BigInt}(9, 4)) == Rational{BigInt}(3, 2)
+    @test BoehmCalc.try_sqrt_exact(Rational{BigInt}(2)) === nothing      # not a perfect square
+    @test BoehmCalc.try_sqrt_exact(Rational{BigInt}(-1)) === nothing     # negative
 end
