@@ -165,3 +165,25 @@ end
     s_pi = sin(ExactReal(π))
     @test iszero(s_pi)
 end
+
+@testset "inverse trig" begin
+    @test iszero(asin(ExactReal(0)))
+
+    asin1 = asin(ExactReal(1))
+    target_halfpi = ExactReal(π) / ExactReal(2)
+    @test asin1.rat_factor == target_halfpi.rat_factor && asin1.prop == target_halfpi.prop
+
+    asin_half = asin(ExactReal(1//2))
+    target_pi6 = ExactReal(π) / ExactReal(6)
+    @test asin_half.rat_factor == target_pi6.rat_factor && asin_half.prop == target_pi6.prop
+
+    @test iszero(atan(ExactReal(0)))
+    atan1 = atan(ExactReal(1))
+    target_pi4 = ExactReal(π) / ExactReal(4)
+    @test atan1.rat_factor == target_pi4.rat_factor && atan1.prop == target_pi4.prop
+
+    acos0 = acos(ExactReal(0))
+    @test acos0.rat_factor == target_halfpi.rat_factor && acos0.prop == target_halfpi.prop
+
+    @test_throws DomainError asin(ExactReal(2))
+end

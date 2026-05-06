@@ -389,3 +389,58 @@ end
 
 # cos(πq) = sin(π(q + 1/2))
 _cos_pi_rational(q::Rational{BigInt}) = _sin_pi_rational(q + 1//2)
+
+# ---------------------------------------------------------------------------
+# asin / acos / atan / atan2
+# ---------------------------------------------------------------------------
+
+function Base.asin(x::ExactReal)
+    iszero(x) && return ExactReal(0)
+    if x.prop.tag == One
+        x.rat_factor < -1 && throw(DomainError(x, "asin domain"))
+        x.rat_factor >  1 && throw(DomainError(x, "asin domain"))
+        # Special rational arguments
+        x.rat_factor == 1//2  && return ExactReal(π) / ExactReal(6)
+        x.rat_factor == -1//2 && return -(ExactReal(π) / ExactReal(6))
+        x.rat_factor == 1     && return ExactReal(π) / ExactReal(2)
+        x.rat_factor == -1    && return -(ExactReal(π) / ExactReal(2))
+        prop = make_property(Asin, x.rat_factor)
+        prop.tag == One && return ExactReal(0)
+        cr = AsinCR(_rational_cr(x.rat_factor))
+        return ExactReal(Rational{BigInt}(1), cr, prop)
+    end
+    # Symbolic input: fall back.
+    cr = AsinCR(_scale_cr(x.rat_factor, x.cr_factor))
+    return ExactReal(Rational{BigInt}(1), cr, Property(Irrational, nothing))
+end
+
+Base.acos(x::ExactReal) = ExactReal(π) / ExactReal(2) - asin(x)
+
+function Base.atan(x::ExactReal)
+    iszero(x) && return ExactReal(0)
+    if x.prop.tag == One
+        x.rat_factor == 1     && return ExactReal(π) / ExactReal(4)
+        x.rat_factor == -1    && return -(ExactReal(π) / ExactReal(4))
+        prop = make_property(Atan, x.rat_factor)
+        prop.tag == One && return ExactReal(0)
+        cr = AtanCR(_rational_cr(x.rat_factor))
+        return ExactReal(Rational{BigInt}(1), cr, prop)
+    end
+    cr = AtanCR(_scale_cr(x.rat_factor, x.cr_factor))
+    return ExactReal(Rational{BigInt}(1), cr, Property(Irrational, nothing))
+end
+
+function Base.atan(y::ExactReal, x::ExactReal)
+    iszero(y) && iszero(x) && return ExactReal(0)
+    if iszero(x)
+        # y > 0 → π/2; y < 0 → -π/2. Need sign of y.
+        return y.rat_factor > 0 ? ExactReal(π) / ExactReal(2) : -(ExactReal(π) / ExactReal(2))
+    end
+    base = atan(y / x)
+    x.prop.tag == One && x.rat_factor > 0 && return base
+    # x < 0 case
+    if y.prop.tag == One && y.rat_factor >= 0
+        return base + ExactReal(π)
+    end
+    return base - ExactReal(π)
+end
