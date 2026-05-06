@@ -48,18 +48,39 @@ function _extract_square(r::Rational{BigInt})
     n = numerator(r); d = denominator(r)
     n < 0 && return (Rational{BigInt}(1), r)
     # Find largest k with k^2 dividing n; same for d.
+    # Use a while loop so the bound isqrt(rem_n) shrinks as factors are
+    # extracted, keeping the algorithm correct for large square factors.
     k_n = BigInt(1); rem_n = n
-    for p in 2:isqrt(BigInt(min(rem_n, 1_000_000)))
+    p = BigInt(2)
+    while p * p <= rem_n
         while rem_n % (p * p) == 0
             k_n *= p
             rem_n ÷= p * p
         end
+        p += (p == 2 ? BigInt(1) : BigInt(2))
+    end
+    # Final check: rem_n might itself be a perfect square (e.g. a large prime^2
+    # that survived the trial-division loop because p only went up to sqrt(rem_n)
+    # after prior reductions — in practice this handles the p^2 case exactly).
+    let sn = isqrt(rem_n)
+        if sn * sn == rem_n
+            k_n *= sn
+            rem_n = BigInt(1)
+        end
     end
     k_d = BigInt(1); rem_d = d
-    for p in 2:isqrt(BigInt(min(rem_d, 1_000_000)))
+    p = BigInt(2)
+    while p * p <= rem_d
         while rem_d % (p * p) == 0
             k_d *= p
             rem_d ÷= p * p
+        end
+        p += (p == 2 ? BigInt(1) : BigInt(2))
+    end
+    let sd = isqrt(rem_d)
+        if sd * sd == rem_d
+            k_d *= sd
+            rem_d = BigInt(1)
         end
     end
     return (Rational{BigInt}(k_n, k_d), Rational{BigInt}(rem_n, rem_d))
@@ -86,6 +107,7 @@ function make_property(tag::Tag, arg)
     elseif tag == Ln
         arg_r > 0 || throw(DomainError(arg_r, "Ln requires positive arg"))
         isone(arg_r) && return Property(One, nothing)
+        arg_r > 1 || throw(DomainError(arg_r, "Ln requires arg > 1; flip via log(x) = -log(1/x)"))
         return Property(Ln, arg_r)
     elseif tag == Log
         arg_r > 0 || throw(DomainError(arg_r, "Log requires positive arg"))
@@ -104,6 +126,8 @@ function make_property(tag::Tag, arg)
     end
     error("unhandled tag: $tag")
 end
+
+Base.:(==)(a::Property, b::Property) = a.tag == b.tag && a.arg == b.arg
 
 is_transcendental(p::Property) = p.tag in (Pi, Exp, Ln, Log, SinPi, TanPi, Asin, Atan)
 

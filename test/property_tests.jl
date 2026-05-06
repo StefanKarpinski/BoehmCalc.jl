@@ -24,4 +24,19 @@ using Test
     # Same property is NOT independent
     @test !definitely_independent(Property(BoehmCalc.Pi, nothing),
                                    Property(BoehmCalc.Pi, nothing))
+
+    # _extract_square handles large square factors (prime > 1000)
+    big_prime = BigInt(1_000_003)
+    @test make_property(BoehmCalc.Sqrt, Rational{BigInt}(big_prime^2)).tag == BoehmCalc.One
+    @test make_property(BoehmCalc.Sqrt, Rational{BigInt}(big_prime^2 * 2)) ==
+          Property(BoehmCalc.Sqrt, Rational{BigInt}(2))
+
+    # Ln domain: requires arg > 1
+    @test_throws DomainError make_property(BoehmCalc.Ln, Rational{BigInt}(1, 2))
+    @test_throws DomainError make_property(BoehmCalc.Ln, Rational{BigInt}(0))
+    @test_throws DomainError make_property(BoehmCalc.Ln, Rational{BigInt}(-1))
+
+    # Sqrt domain: requires arg > 0
+    @test_throws DomainError make_property(BoehmCalc.Sqrt, Rational{BigInt}(0))
+    @test_throws DomainError make_property(BoehmCalc.Sqrt, Rational{BigInt}(-1))
 end
