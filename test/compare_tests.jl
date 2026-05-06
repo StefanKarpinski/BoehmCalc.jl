@@ -115,5 +115,19 @@ using Test
         ln2_val = log(ExactReal(2))
         # These are definitely_independent; at least one magnitude_ge should hold
         @test is_comparable(pi_val, ln2_val)
+
+        # definitely_less returning a Bool (comparable values)
+        dl_true  = definitely_less(ExactReal(1), ExactReal(2))
+        @test dl_true === true
+        dl_false = definitely_less(ExactReal(2), ExactReal(1))
+        @test dl_false === false
+
+        # >, <=, >= operators
+        @test ExactReal(3) > ExactReal(2)
+        @test !(ExactReal(2) > ExactReal(3))
+        @test ExactReal(2) <= ExactReal(3)
+        @test ExactReal(2) <= ExactReal(2)
+        @test ExactReal(3) >= ExactReal(2)
+        @test ExactReal(2) >= ExactReal(2)
     end
 end
