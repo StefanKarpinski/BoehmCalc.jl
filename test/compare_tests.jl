@@ -30,4 +30,18 @@ using Test
         sorted = sort([ExactReal(π), ExactReal(2), ExactReal(0)])
         @test sorted == [ExactReal(0), ExactReal(2), ExactReal(π)]
     end
+
+    @testset "hashing via decompose" begin
+        @test hash(ExactReal(1//3)) == hash(1//3)
+        @test hash(ExactReal(0.5)) == hash(0.5)
+        @test hash(ExactReal(2)) == hash(2)
+        @test hash(ExactReal(π)) == hash(π)
+        @test hash(ExactReal(ℯ)) == hash(ℯ)
+
+        s = Set{Real}([1, ExactReal(1)])
+        @test length(s) == 1
+
+        d = Dict{Real,Int}(1//3 => 7)
+        @test d[ExactReal(1//3)] == 7
+    end
 end

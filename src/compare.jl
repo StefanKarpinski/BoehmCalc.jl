@@ -72,3 +72,49 @@ Base.:<(a::ExactReal, b::ExactReal) = isless(a, b)
 Base.:>(a::ExactReal, b::ExactReal) = isless(b, a)
 Base.:<=(a::ExactReal, b::ExactReal) = !isless(b, a)
 Base.:>=(a::ExactReal, b::ExactReal) = !isless(a, b)
+
+# ---------------------------------------------------------------------------
+# Hashing
+# ---------------------------------------------------------------------------
+
+function Base.Float64(x::ExactReal)
+    if is_rational(x)
+        return Float64(x.rat_factor)
+    end
+    bf = setprecision(BigFloat, 64) do
+        a = get_approx(x.cr_factor, -53)
+        BigFloat(a) * BigFloat(2.0)^(-53) * BigFloat(x.rat_factor)
+    end
+    return Float64(bf)
+end
+
+function Base.decompose(x::ExactReal)::Tuple{BigInt, Int, BigInt}
+    if is_rational(x)
+        return (numerator(x.rat_factor), 0, denominator(x.rat_factor))
+    end
+    return Base.decompose(Float64(x))
+end
+
+# Minimal promotion/conversion so that mixed-type == and Set/Dict work.
+# Full conversion machinery is in Phase 9 (convert.jl).
+Base.convert(::Type{ExactReal}, x::Integer) = ExactReal(x)
+Base.convert(::Type{ExactReal}, x::Rational) = ExactReal(x)
+Base.promote_rule(::Type{ExactReal}, ::Type{<:Integer}) = ExactReal
+Base.promote_rule(::Type{ExactReal}, ::Type{<:Rational}) = ExactReal
+
+function Base.hash(x::ExactReal, h::UInt)
+    # For the canonical mathematical constants π and ℯ, match their Irrational hash.
+    if x.prop.tag == Pi && isone(x.rat_factor)
+        return hash(π, h)
+    end
+    if x.prop.tag == Exp && x.prop.arg == Rational{BigInt}(1) && isone(x.rat_factor)
+        return hash(ℯ, h)
+    end
+    # For rational values, delegate to the generic Real hash (which uses decompose).
+    # This ensures hash(ExactReal(1//3)) == hash(1//3) etc.
+    if is_rational(x)
+        return invoke(hash, Tuple{Real, UInt}, x, h)
+    end
+    # For other irrationals, approximate via Float64 and hash that.
+    return hash(Float64(x), h)
+end
