@@ -244,6 +244,10 @@ end
 
 function Base.exp(x::ExactReal)
     iszero(x) && return ExactReal(1)
+    # Symbolic recognition: exp(ln(r)) = r when ExactReal is purely Ln-tagged with rat_factor 1
+    if x.prop.tag == Ln && isone(x.rat_factor)
+        return ExactReal(x.prop.arg)
+    end
     if x.prop.tag == One
         prop = make_property(Exp, x.rat_factor)
         prop.tag == One && return ExactReal(1)

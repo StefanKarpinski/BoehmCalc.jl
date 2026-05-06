@@ -8,9 +8,7 @@ using Test
     @test sqrt(ExactReal(4)) == ExactReal(2)
     @test sin(asin(ExactReal(1//2))) == ExactReal(1//2)
     @test asin(sin(ExactReal(π) / ExactReal(6))) == ExactReal(π) / ExactReal(6)
-    # Algorithm gap: exp(log(7)) produces Irrational tag; _exact_equal can't
-    # prove it equals the rational 7.
-    @test_skip exp(log(ExactReal(7))) == ExactReal(7)
+    @test exp(log(ExactReal(7))) == ExactReal(7)
     @test log(exp(ExactReal(2))) == ExactReal(2)
 
     # log10 falls back to Irrational in v1, so check via numeric proximity
