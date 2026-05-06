@@ -77,30 +77,12 @@ Base.:>=(a::ExactReal, b::ExactReal) = !isless(a, b)
 # Hashing
 # ---------------------------------------------------------------------------
 
-function Base.Float64(x::ExactReal)
-    if is_rational(x)
-        return Float64(x.rat_factor)
-    end
-    bf = setprecision(BigFloat, 64) do
-        a = get_approx(x.cr_factor, -53)
-        BigFloat(a) * BigFloat(2.0)^(-53) * BigFloat(x.rat_factor)
-    end
-    return Float64(bf)
-end
-
 function Base.decompose(x::ExactReal)::Tuple{BigInt, Int, BigInt}
     if is_rational(x)
         return (numerator(x.rat_factor), 0, denominator(x.rat_factor))
     end
     return Base.decompose(Float64(x))
 end
-
-# Minimal promotion/conversion so that mixed-type == and Set/Dict work.
-# Full conversion machinery is in Phase 9 (convert.jl).
-Base.convert(::Type{ExactReal}, x::Integer) = ExactReal(x)
-Base.convert(::Type{ExactReal}, x::Rational) = ExactReal(x)
-Base.promote_rule(::Type{ExactReal}, ::Type{<:Integer}) = ExactReal
-Base.promote_rule(::Type{ExactReal}, ::Type{<:Rational}) = ExactReal
 
 function Base.hash(x::ExactReal, h::UInt)
     # For the canonical mathematical constants π and ℯ, match their Irrational hash.

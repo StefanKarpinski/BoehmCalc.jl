@@ -7,6 +7,7 @@ include("bounded.jl")
 include("property.jl")
 include("exact.jl")
 include("compare.jl")
+include("convert.jl")
 
 export with_timeout, CancelException
 export MAX_RATIONAL_BITS
