@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# Local coverage report for BoehmCalc.jl.
+# Usage: bin/coverage
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+julia --project=. -e 'using Pkg; Pkg.test(coverage=true)'
+julia --project=test/ -e '
+  using Coverage
+  cov = process_folder("src")
+  covered, total = get_summary(cov)
+  pct = round(100 * covered / total, digits=2)
+  println()
+  println("Line coverage: $covered / $total = $pct%")
+  println()
+  for f in cov
+      cov_lines = sum(c -> c !== nothing && c > 0, f.coverage)
+      total_lines = sum(c -> c !== nothing, f.coverage)
+      total_lines > 0 || continue
+      println("  $(f.filename): $cov_lines / $total_lines = $(round(100*cov_lines/total_lines, digits=1))%")
+  end
+  Coverage.clean_folder("src")
+'
