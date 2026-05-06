@@ -29,4 +29,10 @@ using Test
         c2 = BoehmCalc.ShiftedCR(BoehmCalc.IntCR(8), -2)  # 8 / 4 = 2
         @test get_approx(c2, 0) == 2
     end
+
+    @testset "NegCR" begin
+        c = BoehmCalc.NegCR(BoehmCalc.IntCR(7))
+        @test get_approx(c, 0) == -7
+        @test get_approx(c, -3) == -56
+    end
 end

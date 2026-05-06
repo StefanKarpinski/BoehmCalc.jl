@@ -79,3 +79,17 @@ mutable struct ShiftedCR <: CR
 end
 
 approximate(x::ShiftedCR, p::Int) = get_approx(x.op, p - x.count)
+
+mutable struct NegCR <: CR
+    op::CR
+    max_appr::BigInt
+    min_prec::Int
+    valid::Bool
+    lock::ReentrantLock
+    function NegCR(op::CR)
+        c = _make_cache()
+        new(op, c[1], c[2], c[3], c[4])
+    end
+end
+
+approximate(x::NegCR, p::Int) = -get_approx(x.op, p)
