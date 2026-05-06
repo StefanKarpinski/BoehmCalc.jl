@@ -1,5 +1,7 @@
 module BoehmCalc
 
-# Write your package code here.
+include("cancel.jl")
 
-end
+export with_timeout, CancelException
+
+end # module BoehmCalc
