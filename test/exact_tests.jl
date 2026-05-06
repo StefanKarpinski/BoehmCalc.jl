@@ -27,3 +27,12 @@ end
     γ = ExactReal(Base.MathConstants.γ)
     @test γ.prop.tag == BoehmCalc.Irrational
 end
+
+@testset "negation" begin
+    a = -ExactReal(3)
+    @test a.rat_factor == -3 && a.prop.tag == BoehmCalc.One
+    b = -(-ExactReal(5))
+    @test b.rat_factor == 5
+    p = -ExactReal(π)
+    @test p.rat_factor == -1 && p.prop.tag == BoehmCalc.Pi
+end

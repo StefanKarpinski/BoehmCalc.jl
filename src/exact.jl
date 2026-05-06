@@ -57,3 +57,9 @@ function ExactReal(x::Base.Irrational)
     cr = BigFloatCR((_)->BigFloat(x), IntCR(0); extra_bits=64)
     ExactReal(Rational{BigInt}(1), cr, Property(Irrational, nothing))
 end
+
+# ---------------------------------------------------------------------------
+# Arithmetic
+# ---------------------------------------------------------------------------
+
+Base.:(-)(x::ExactReal) = ExactReal(-x.rat_factor, x.cr_factor, x.prop)
