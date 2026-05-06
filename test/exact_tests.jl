@@ -205,3 +205,22 @@ end
     sn5 = sign(ExactReal(-5));  @test sn5.rat_factor == -1
     @test iszero(sign(ExactReal(0)))
 end
+
+@testset "numerical agreement with BigFloat" begin
+    for prec in [53, 256, 1024]
+        setprecision(BigFloat, prec) do
+            cases = [
+                (ExactReal(2) * ExactReal(3),           BigFloat(6)),
+                (sqrt(ExactReal(2)),                    sqrt(BigFloat(2))),
+                (exp(ExactReal(1)),                     exp(BigFloat(1))),
+                (log(ExactReal(10)),                    log(BigFloat(10))),
+                (sin(ExactReal(1)),                     sin(BigFloat(1))),
+                (atan(ExactReal(1)) * ExactReal(4),     BigFloat(π)),
+            ]
+            for (er, bf) in cases
+                er_bf = BigFloat(er; precision=prec)
+                @test abs(er_bf - bf) < BigFloat(2)^(-prec + 4)
+            end
+        end
+    end
+end
