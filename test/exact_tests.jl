@@ -79,14 +79,26 @@ end
     b = ExactReal(1) / ExactReal(3)
     @test b.rat_factor == 1//3 && is_rational(b)
 
-    # 1/π keeps Pi tag with rat_factor 1, but cr_factor inverted
+    # 1/π drops tag to Irrational (we don't have a Pi^-1 tag in v1)
     inv_pi = ExactReal(1) / ExactReal(π)
-    @test inv_pi.prop.tag == BoehmCalc.Pi
-    @test inv_pi.rat_factor == 1
+    @test inv_pi.prop.tag == BoehmCalc.Irrational
+
+    # 1/√2 = √(1/2) — Sqrt is closed under inversion
+    sqrt2 = ExactReal(Rational{BigInt}(1), BoehmCalc.SqrtCR(BoehmCalc.IntCR(2)),
+                     BoehmCalc.make_property(BoehmCalc.Sqrt, Rational{BigInt}(2)))
+    inv_sqrt2 = inv(sqrt2)
+    @test inv_sqrt2.prop.tag == BoehmCalc.Sqrt
+    @test inv_sqrt2.prop.arg == Rational{BigInt}(1, 2)
+
+    # 1/e^2 = e^(-2) — Exp is closed under inversion
+    e2 = ExactReal(Rational{BigInt}(1), BoehmCalc.ExpCR(BoehmCalc.IntCR(2)),
+                  BoehmCalc.make_property(BoehmCalc.Exp, Rational{BigInt}(2)))
+    inv_e2 = inv(e2)
+    @test inv_e2.prop.tag == BoehmCalc.Exp
+    @test inv_e2.prop.arg == Rational{BigInt}(-2)
 
     inv_2 = inv(ExactReal(2))
     @test inv_2.rat_factor == 1//2 && is_rational(inv_2)
 
-    # Division by zero
     @test_throws DivideError ExactReal(1) / ExactReal(0)
 end

@@ -185,7 +185,27 @@ function Base.inv(x::ExactReal)
         return ExactReal(inv(x.rat_factor))
     end
     inv_rat = inv(x.rat_factor)
-    return ExactReal(inv_rat, InvCR(x.cr_factor), x.prop)
+    if x.prop.tag == Sqrt
+        # 1/(k·√r) = (1/k)·√(1/r). make_property normalizes the new arg.
+        new_arg = inv(x.prop.arg)
+        new_prop = make_property(Sqrt, new_arg)
+        # If make_property returned One (perfect square), absorb the cr factor.
+        if new_prop.tag == One
+            return ExactReal(inv_rat, _ONE_CR, _ONE_PROP)
+        end
+        return ExactReal(inv_rat, _cr_for(new_prop), new_prop)
+    end
+    if x.prop.tag == Exp
+        # 1/e^a = e^(-a). Always Exp-tagged.
+        new_arg = -x.prop.arg
+        new_prop = make_property(Exp, new_arg)
+        if new_prop.tag == One
+            return ExactReal(inv_rat, _ONE_CR, _ONE_PROP)
+        end
+        return ExactReal(inv_rat, _cr_for(new_prop), new_prop)
+    end
+    # General case: drop the symbolic tag.
+    return ExactReal(inv_rat, InvCR(x.cr_factor), Property(Irrational, nothing))
 end
 
 Base.:(/)(a::ExactReal, b::ExactReal) = a * inv(b)
