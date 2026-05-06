@@ -17,7 +17,7 @@ using Test
     # Algorithm gap: (√2+1)(√2-1) creates an Irrational-tagged sum whose
     # _exact_equal path does not fall back to CR approximation for equality.
     # v1.x: requires symbolic polynomial expansion
-    @test_skip (sqrt(ExactReal(2)) + ExactReal(1)) * (sqrt(ExactReal(2)) - ExactReal(1)) == ExactReal(1)
+    @test_broken (sqrt(ExactReal(2)) + ExactReal(1)) * (sqrt(ExactReal(2)) - ExactReal(1)) == ExactReal(1)
 
     # Trig
     @test sin(ExactReal(0)) == ExactReal(0)
