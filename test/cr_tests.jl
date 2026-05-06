@@ -21,4 +21,12 @@ using Test
         @test get_approx(c, 0) == 7
         @test c.min_prec == -8              # still cached at -8
     end
+
+    @testset "ShiftedCR" begin
+        c = BoehmCalc.ShiftedCR(BoehmCalc.IntCR(3), 4)  # 3 * 2^4 = 48
+        @test get_approx(c, 0) == 48
+        @test get_approx(c, 4) == 3
+        c2 = BoehmCalc.ShiftedCR(BoehmCalc.IntCR(8), -2)  # 8 / 4 = 2
+        @test get_approx(c2, 0) == 2
+    end
 end

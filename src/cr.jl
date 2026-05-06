@@ -64,3 +64,18 @@ mutable struct IntCR <: CR
 end
 
 approximate(x::IntCR, p::Int) = _shift(x.n, p)
+
+mutable struct ShiftedCR <: CR
+    op::CR
+    count::Int                  # positive = left shift (multiply by 2^count)
+    max_appr::BigInt
+    min_prec::Int
+    valid::Bool
+    lock::ReentrantLock
+    function ShiftedCR(op::CR, count::Int)
+        c = _make_cache()
+        new(op, count, c[1], c[2], c[3], c[4])
+    end
+end
+
+approximate(x::ShiftedCR, p::Int) = get_approx(x.op, p - x.count)
