@@ -13,4 +13,20 @@ using Test
     # Float64 → ExactReal: literal binary value
     bf = Rational{BigInt}(0.1)   # the exact binary rational
     @test ExactReal(0.1).rat_factor == bf
+
+    @testset "conversion out" begin
+        @test Float64(ExactReal(0)) == 0.0
+        @test Float64(ExactReal(1//4)) == 0.25
+        @test Float64(ExactReal(π)) === Float64(π)
+
+        bf = BigFloat(ExactReal(π); precision=128)
+        @test abs(BigFloat(π; precision=128) - bf) < BigFloat(2)^-126
+
+        @test Rational{BigInt}(ExactReal(0)) == 0//1
+        @test Rational{BigInt}(ExactReal(3//7)) == 3//7
+        @test_throws InexactError Rational{BigInt}(ExactReal(π))
+
+        @test BigInt(ExactReal(42)) == 42
+        @test_throws InexactError BigInt(ExactReal(1//2))
+    end
 end
